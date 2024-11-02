@@ -72,6 +72,11 @@ export default function App() {
             await processStream(llmResponse);
 
         } catch (error) {
+            setIsSearching(false);
+            setIsAnswering(false);
+            setSuggestedSearches([]);
+            setSources([]);
+            setSummary("No results.");
             console.error('Error:', error);
         }
     }

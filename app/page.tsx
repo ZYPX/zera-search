@@ -36,10 +36,10 @@ export default function App() {
         setCurrentQuery(query)
         setSummary("");
         setWeatherData(null);
-        setIsSearching(true)
-        setSearchPerformed(true)
-        setIsAnswering(true)
-        setIsLoadingWeather(false)
+        setIsSearching(true);
+        setSearchPerformed(true);
+        setIsAnswering(true);
+        setIsLoadingWeather(false);
 
         try {
             const toolCall = await fetch('/api/results', {

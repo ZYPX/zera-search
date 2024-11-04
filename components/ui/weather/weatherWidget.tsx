@@ -110,10 +110,12 @@ interface CurrentWeatherProps {
 }
 
 const CurrentWeather: React.FC<CurrentWeatherProps> = ({ data, isCelsius, location, currentTime }) => {
+    const [hours] = currentTime.split(':').map(Number)
+    const isNight = hours < 6 || hours >= 18
     return (
         <div className="flex items-center justify-between bg-white bg-opacity-20 rounded-lg p-6 backdrop-blur-md">
             <div className="flex items-center">
-                <WeatherIcon condition={data.condition} className="w-24 h-24 mr-6" />
+                <WeatherIcon condition={data.condition} isNight={isNight} className="w-24 h-24 mr-6" />
                 <div>
                     <h2 className="text-5xl font-bold w-32">{Math.round(data.temperature)}°{isCelsius ? 'C' : 'F'}</h2>
                     <p className="text-2xl capitalize">{data.condition}</p>

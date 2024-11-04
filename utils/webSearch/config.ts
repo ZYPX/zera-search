@@ -38,6 +38,8 @@ export const defaultHeaders: headers = {
 export const apiHeaders = new Headers({
     "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
     "Content-Type": "application/json",
+    "HTTP-Referer": "https://github.com/ZYPX/zera-search",
+    "X-Title": "Zera Search",
     "User-Agent": defaultHeaders["user-agent"]
 });
 

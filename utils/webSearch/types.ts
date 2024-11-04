@@ -61,12 +61,3 @@ export interface ToolCall {
         arguments: string;
     };
 }
-
-export interface StreamChunk {
-    choices: {
-        delta: {
-            content?: string;
-            tool_calls?: ToolCall[];
-        };
-    }[];
-}

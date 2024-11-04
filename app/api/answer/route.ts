@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
                                 },
                                 condition: {
                                     type: "string",
-                                    enum: ["clear", "cloudy", "rainy", "snowy", "thunderstorm", "foggy", "hail", "showers"],
+                                    enum: ["clear", "cloudy", "rainy", "snowy", "thunderstorm", "foggy", "hail", "showers", "partly cloudy"],
                                     description: "Current weather condition"
                                 },
                                 humidity: {
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
                                     },
                                     condition: {
                                         type: "string",
-                                        enum: ["clear", "cloudy", "rainy", "snowy", "thunderstorm", "foggy", "hail", "showers"],
+                                        enum: ["clear", "cloudy", "rainy", "snowy", "thunderstorm", "foggy", "hail", "showers", "partly cloudy"],
                                         description: "Forecast weather condition"
                                     },
                                     precipitation: {

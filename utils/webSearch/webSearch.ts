@@ -8,11 +8,6 @@ export interface SearchResult {
 }
 
 export class WebSearchService {
-    async search(query: string): Promise<string[]> {
-        const searchResults = await this.getSearchResults(query);
-        if (!searchResults) return [];
-        return this.getWebPages(searchResults);
-    }
 
     async getSearchResults(query: string): Promise<SearchResult[] | undefined> {
         try {
@@ -95,7 +90,7 @@ export class WebSearchService {
         const turndownService = new TurndownService();
         const elements = ["head", "footer", "style", "script", "header", "nav", "navbar"];
         const pattern = new RegExp(`<(${elements.join('|')})[^>]*>.*?</\\1>`, 'gis');
-        let cleanedHTML = html.replace(pattern, '');
+        const cleanedHTML = html.replace(pattern, '');
         const patternWhitespace = /\s\s+/g;
         let markdown = turndownService.turndown(cleanedHTML);
         markdown = markdown.replace(patternWhitespace, "\n");

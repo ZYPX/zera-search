@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, Droplets, Wind, Sunrise, Sunset, CloudFog, CloudHail, CloudDrizzle } from 'lucide-react'
+import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudLightning, Droplets, Wind, Sunrise, Sunset, CloudFog, CloudHail, CloudDrizzle, CloudSun } from 'lucide-react'
 
-export type WeatherCondition = 'clear' | 'cloudy' | 'rainy' | 'snowy' | 'thunderstorm' | 'foggy' | 'hail' | 'showers'
+export type WeatherCondition = 'clear' | 'cloudy' | 'rainy' | 'snowy' | 'thunderstorm' | 'foggy' | 'hail' | 'showers' | 'partly cloudy'
 
 export interface WeatherData {
     title: string;
@@ -39,11 +39,12 @@ const WeatherIcon: React.FC<WeatherIconProps> = ({ condition, className = 'w-6 h
 
         switch (condition) {
             case 'clear': return isNight ? 'text-gray-300' : 'text-yellow-400'
-            case 'cloudy': return 'text-gray-400'
+            case 'cloudy': return 'text-gray-500'
+            case 'partly cloudy': return 'text-yellow-100'
             case 'rainy': return 'text-blue-400'
             case 'snowy': return 'text-blue-200'
             case 'thunderstorm': return 'text-yellow-300'
-            case 'foggy': return 'text-gray-300'
+            case 'foggy': return 'text-gray-500'
             case 'hail': return 'text-blue-300'
             default: return 'text-yellow-400'
         }
@@ -60,6 +61,8 @@ const WeatherIcon: React.FC<WeatherIconProps> = ({ condition, className = 'w-6 h
             return isNight ? <Moon className={`${className} ${iconColor}`} /> : <Sun className={`${className} ${iconColor}`} />
         case 'cloudy':
             return <Cloud className={`${className} ${iconColor}`} />
+        case 'partly cloudy':
+            return <CloudSun className={`${className} ${iconColor}`} />
         case 'rainy':
             return <CloudDrizzle className={`${className} ${iconColor}`} />
         case 'snowy':

@@ -5,15 +5,14 @@ import { SearchBar } from '@/components/ui/search/SearchBar'
 import { SourceLinks } from '@/components/ui/search/SourceLinks'
 import { SearchSummary } from '@/components/ui/search/SearchSummary'
 import { SuggestedSearches } from '@/components/ui/search/SuggestedSearches'
-import {Check, Clipboard, Link2, MessageSquare, Sparkles} from 'lucide-react'
-
+import { Check, Clipboard, Link2, MessageSquare, Sparkles } from 'lucide-react'
+import EnhancedWeatherWidget, { WeatherData } from '@/components/ui/weather/weatherWidget'
 
 interface SearchResult {
     url: string;
     title: string;
     favicon: string;
 }
-
 
 export default function App() {
     const [isSearching, setIsSearching] = useState<boolean>(false)
@@ -24,6 +23,8 @@ export default function App() {
     const [suggestedSearches, setSuggestedSearches] = useState<string[]>([])
     const [copied, setCopied] = useState(false)
     const [currentQuery, setCurrentQuery] = useState('')
+    const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+    const [isLoadingWeather, setIsLoadingWeather] = useState(false);
 
     const handleCopy = async () => {
         await navigator.clipboard.writeText(summary)
@@ -34,9 +35,11 @@ export default function App() {
     const handleSearch = async (query: string) => {
         setCurrentQuery(query)
         setSummary("");
+        setWeatherData(null);
         setIsSearching(true)
         setSearchPerformed(true)
         setIsAnswering(true)
+        setIsLoadingWeather(false)
 
         try {
             const toolCall = await fetch('/api/results', {
@@ -86,27 +89,69 @@ export default function App() {
             const reader = response.body!.getReader();
             const decoder = new TextDecoder("utf-8");
             let buffer = "";
+
+            let currentToolCall: {
+                id?: string;
+                name?: string;
+                arguments: string;
+            } = {
+                arguments: ''
+            };
+
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) {
-                    break;
-                }
+                if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
                 buffer += chunk;
 
                 const lines = buffer.split("\n");
-                buffer = lines.pop() || ""; // Keep any incomplete line in the buffer
+                buffer = lines.pop() || "";
 
                 for (const line of lines) {
                     if (line.startsWith("data: ") && line !== "data: [DONE]") {
                         try {
                             const json = JSON.parse(line.slice(6));
+
+                            // Handle tool calls
+                            const toolCallDelta = json.choices[0]?.delta?.tool_calls?.[0];
+                            if (toolCallDelta) {
+                                // Start of new tool call
+                                if (toolCallDelta.id) {
+                                    currentToolCall.id = toolCallDelta.id;
+                                    if (toolCallDelta.function?.name === 'getWeatherData') {
+                                        setIsLoadingWeather(true); // Start loading when we detect weather tool call
+                                    }
+                                }
+
+                                // Function name
+                                if (toolCallDelta.function?.name) {
+                                    currentToolCall.name = toolCallDelta.function.name;
+                                }
+
+                                // Accumulate arguments
+                                if (toolCallDelta.function?.arguments) {
+                                    currentToolCall.arguments += toolCallDelta.function.arguments;
+                                }
+
+                                // Check if this is the end of the tool call
+                                if (currentToolCall.id && currentToolCall.name === 'getWeatherData') {
+                                    try {
+                                        const argumentsJson = JSON.parse(currentToolCall.arguments);
+                                        setWeatherData(argumentsJson);
+                                        setIsLoadingWeather(false); // Stop loading once we have the data
+                                        currentToolCall = { arguments: '' };
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                    } catch (e) {
+                                        // Not complete JSON yet, continue accumulating
+                                    }
+                                }
+                            }
+
+                            // Handle regular content
                             const content = json.choices[0]?.delta?.content;
                             if (content) {
-                                for (const char of content) {
-                                    setSummary((prev) => prev + char);
-                                }
+                                setSummary((prev) => prev + content);
                             }
                         } catch (error) {
                             console.error("Error parsing JSON:", error);
@@ -115,6 +160,7 @@ export default function App() {
                 }
             }
         } catch (e) {
+            setIsLoadingWeather(false); // Make sure to reset loading state on error
             throw new Error("Streaming error: " + e);
         }
     }
@@ -163,7 +209,21 @@ export default function App() {
                                     )}
                                 </button>
                             </div>
-                            <SearchSummary summary={summary} isLoading={isAnswering}/>
+                            {(isLoadingWeather || weatherData) && (
+                                <div className="mb-4 rounded-lg border border-gray-200 p-4">
+                                    {isLoadingWeather ? (
+                                        <div className="flex items-center justify-center space-x-2 py-8">
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+                                            <span className="text-gray-700">Gathering weather data...</span>
+                                        </div>
+                                    ) : weatherData ? (
+                                        <EnhancedWeatherWidget data={weatherData} />
+                                    ) : null}
+                                </div>
+                            )}
+                            {(isAnswering || summary) && (
+                                <SearchSummary summary={summary} isLoading={isAnswering} />
+                            )}
                         </div>
 
                         <div className="border-t border-gray-200"/>

@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
             {
                 role: "system",
                 content: `You are a helpful agent with the ability to access to the internet via the tool provided to you. 
-                Use the webSearch tool to find relevant information for the user's query. Always generate 4 thoughtful
-                related search queries that would help explore different aspects or angles of the topic.`
+                Use the webSearch tool to find relevant information for the user's query. If the query is about the current weather at a location, generate the query as "Current weather at LOCATION weather.com ten day forecast". 
+                Always generate 4 thoughtful related search queries that would help explore different aspects or angles of the topic.`
             },
             {
                 role: "user",
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
                             }
                             toolCall.function.arguments += currentCall.function.arguments || '';
                         }
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     } catch (e) {
                         //console.error("Error processing chunk:", e);
                     }

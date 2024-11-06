@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { marked } from 'marked'
-import { Clipboard, Check } from 'lucide-react'
 
 interface SearchSummaryProps {
     summary: string;
@@ -36,7 +35,7 @@ export function SearchSummary({ summary, isLoading }: SearchSummaryProps) {
         <div className="relative">
             <div className="max-w-none bg-white rounded-lg shadow-sm p-6 text-gray-800
                     hover:shadow-md transition-shadow duration-200 text-wrap">
-                <div className="prose prose-sm prose-zinc" dangerouslySetInnerHTML={{ __html: parsedSummary }}></div>
+                <div className="prose prose-sm prose-zinc max-w-none" dangerouslySetInnerHTML={{ __html: parsedSummary }}></div>
             </div>
         </div>
     )

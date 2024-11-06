@@ -13,19 +13,6 @@ export interface ToolFunction {
     parameters: {
         type: string;
         properties: {
-            query: {
-                type: string;
-                description: string;
-            };
-            relatedSearches: {
-                type: "array";
-                items: {
-                    type: "string";
-                };
-                description: string;
-                minItems: number;
-                maxItems: number;
-            };
             [key: string]: {
                 type: string | "array";
                 description: string;

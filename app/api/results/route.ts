@@ -5,6 +5,27 @@ import { apiConfig } from '@/utils/webSearch/config';
 
 const webSearchService = new WebSearchService();
 
+function processChunk(line: string, toolCall: any) {
+    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+        const jsonString = line.slice(6);
+        try {
+            const chunkJSON = JSON.parse(jsonString);
+            if (chunkJSON.choices?.[0]?.delta?.tool_calls?.[0]) {
+                const currentCall = chunkJSON.choices[0].delta.tool_calls[0];
+                if (currentCall.id) {
+                    toolCall.id = currentCall.id;
+                    toolCall.function.name = currentCall.function.name;
+                }
+                toolCall.function.arguments += currentCall.function.arguments || '';
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+            // Silent fail for invalid JSON chunks
+            // console.error("Error processing chunk:", e);
+        }
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -78,50 +99,54 @@ export async function POST(request: NextRequest) {
             }
         };
 
+        let buffer = '';
+
         // Process chunks to get tool call
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+                // Process any remaining data in buffer
+                if (buffer.trim()) {
+                    processChunk(buffer, toolCall);
+                }
+                break;
+            }
 
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
+            // Append new chunk to buffer
+            buffer += new TextDecoder().decode(value, { stream: true });
 
-            for (const line of lines) {
-                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                    const jsonString = line.slice(6);
-                    try {
-                        const chunkJSON = JSON.parse(jsonString);
-                        if (chunkJSON.choices?.[0]?.delta?.tool_calls?.[0]) {
-                            const currentCall = chunkJSON.choices[0].delta.tool_calls[0];
-                            if (currentCall.id) {
-                                toolCall.id = currentCall.id;
-                                toolCall.function.name = currentCall.function.name;
-                            }
-                            toolCall.function.arguments += currentCall.function.arguments || '';
-                        }
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    } catch (e) {
-                        //console.error("Error processing chunk:", e);
-                    }
+            // Process complete lines
+            let newlineIndex;
+            while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                const line = buffer.slice(0, newlineIndex);
+                buffer = buffer.slice(newlineIndex + 1);
+
+                if (line.trim()) {
+                    processChunk(line, toolCall);
                 }
             }
         }
 
-        // Get search results if tool call exists, otherwise return empty
+        // Get search results if tool call exists
         if (toolCall.id !== "") {
-            const parsedArgs: ToolCallResponse = JSON.parse(toolCall.function.arguments);
-            const searchResults = await webSearchService.getSearchResults(parsedArgs.query);
+            try {
+                const parsedArgs: ToolCallResponse = JSON.parse(toolCall.function.arguments);
+                const searchResults = await webSearchService.getSearchResults(parsedArgs.query);
 
-            return new Response(JSON.stringify({
-                searchResults,
-                relatedSearches: parsedArgs.relatedSearches,
-                toolCall,
-                originalQuery: prompt
-            }), {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+                return new Response(JSON.stringify({
+                    searchResults,
+                    relatedSearches: parsedArgs.relatedSearches,
+                    toolCall,
+                    originalQuery: prompt
+                }), {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+            } catch (error) {
+                console.error('Error parsing tool call arguments:', error);
+                throw error;
+            }
         }
 
         return new Response(JSON.stringify({

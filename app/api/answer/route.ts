@@ -184,19 +184,55 @@ export async function POST(request: NextRequest) {
             throw new Error(`API request failed: ${response.status}`);
         }
 
+        const isValidJSON = (str: string): boolean => {
+            try {
+                JSON.parse(str);
+                return true;
+            } catch {
+                return false;
+            }
+        };
+
         // Create streaming response
         const stream = new ReadableStream({
             async start(controller) {
                 const reader = response.body!.getReader();
                 const decoder = new TextDecoder();
+                let buffer = ''; // Buffer to store partial chunks
 
                 try {
                     while (true) {
                         const { done, value } = await reader.read();
-                        if (done) break;
+                        if (done) {
+                            // Process any remaining data in buffer
+                            if (buffer.trim()) {
+                                controller.enqueue(new TextEncoder().encode(buffer));
+                            }
+                            break;
+                        }
 
-                        const chunk = decoder.decode(value, { stream: true });
-                        controller.enqueue(new TextEncoder().encode(chunk));
+                        // Append new chunk to buffer
+                        buffer += decoder.decode(value, { stream: true });
+
+                        // Find complete chunks (lines) ending with newlines
+                        let newlineIndex;
+                        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                            // Extract the complete chunk
+                            const chunk = buffer.slice(0, newlineIndex + 1);
+                            buffer = buffer.slice(newlineIndex + 1);
+
+                            // Process and enqueue the complete chunk
+                            if (chunk.trim().startsWith('data: ')) {
+                                const cleanChunk = chunk.replace(/^data: /, '').trim();
+                                if (cleanChunk !== '[DONE]') {
+                                    if (isValidJSON(cleanChunk)) {
+                                        controller.enqueue(new TextEncoder().encode(chunk));
+                                    } else {
+                                        console.warn('Received invalid JSON chunk:', cleanChunk);
+                                    }
+                                }
+                            }
+                        }
                     }
                 } catch (error) {
                     controller.error(error);

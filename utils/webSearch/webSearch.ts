@@ -76,8 +76,12 @@ export class WebSearchService {
                     const content = await this.convertToMarkdown(html);
                     const fullContent = `${metadata}${content}\n\n---\n\n`;
 
-                    webPages.push(fullContent);
-                    numPagesFetched++;
+                    // keep the content under 32k tokens for llm
+                    if (fullContent.length < 128000) {
+                        webPages.push(fullContent);
+                        numPagesFetched++;
+                    }
+
                 }
             } catch (error) {
                 console.error(`Failed to fetch ${link}:`, error);

@@ -63,7 +63,9 @@ export async function POST(request: NextRequest) {
             {
                 role: "system",
                 content: `You are a helpful agent with the ability to access to the internet via the tool provided to you. 
-                Use the webSearch tool to find relevant information for the user's query. If the query is about the current weather at a location, generate the query as "Current weather at LOCATION weather.com ten day forecast". 
+                Use the webSearch tool to find relevant information for the user's query.
+                If the query is about the current weather at a location, generate the query as "Current weather at LOCATION weather.com ten day forecast".
+                If the query relates to news or current events, add the current date to the end of the query. The current date is: ${new Date().toLocaleDateString()}.
                 Always generate 4 thoughtful related search queries that would help explore different aspects or angles of the topic.`
             },
             {

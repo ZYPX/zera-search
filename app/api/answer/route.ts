@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
                                 const cleanChunk = chunk.replace(/^data: /, '').trim();
                                 if (cleanChunk !== '[DONE]') {
                                     if (isValidJSON(cleanChunk)) {
-                                        controller.enqueue(new TextEncoder().encode(chunk));
+                                        controller.enqueue(new TextEncoder().encode(chunk + "\n"));
                                     } else {
                                         console.warn('Received invalid JSON chunk:', cleanChunk);
                                     }
@@ -234,6 +234,7 @@ export async function POST(request: NextRequest) {
                             }
                         }
                     }
+                    controller.enqueue(new TextEncoder().encode("data: [DONE]"));
                 } catch (error) {
                     controller.error(error);
                 } finally {
